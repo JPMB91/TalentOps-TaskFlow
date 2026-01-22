@@ -1,0 +1,15 @@
+[
+  {
+    "id": "project-123",
+    "name": "Mi Nuevo Proyecto",
+    "description": "Descripción del proyecto",
+    "members": [
+      {
+        "email": "john@test.com"
+      },
+      {
+        "email": "jane@test.com"
+      }
+    ]
+  }
+]
