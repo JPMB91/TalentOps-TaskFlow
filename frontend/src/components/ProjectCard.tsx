@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, Users, MoreVertical } from 'lucide-react';
+import React from "react";
+import { Calendar, Users, MoreVertical } from "lucide-react";
 
 interface Project {
   id: string;
@@ -16,26 +16,23 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
-  onClick
+  onClick,
 }) => {
   return (
     <div
       onClick={onClick}
+      data-cy="project-card"
       className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
-          {project.name}
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
         <button className="text-gray-400 hover:text-gray-600">
           <MoreVertical size={20} />
         </button>
       </div>
 
       {project.description && (
-        <p className="text-gray-600 mb-4 line-clamp-2">
-          {project.description}
-        </p>
+        <p className="text-gray-600 mb-4 line-clamp-2">{project.description}</p>
       )}
 
       <div className="flex items-center justify-between text-sm text-gray-500">
@@ -46,9 +43,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
         <div className="flex items-center space-x-1">
           <Calendar size={16} />
-          <span>
-            {new Date(project.createdAt).toLocaleDateString()}
-          </span>
+          <span>{new Date(project.createdAt).toLocaleDateString()}</span>
         </div>
       </div>
 
@@ -56,7 +51,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         {project.members.slice(0, 3).map((member) => (
           <img
             key={member.id}
-            src={member.avatar || '/default-avatar.png'}
+            src={member.avatar || "/default-avatar.png"}
             alt={member.name}
             className="w-8 h-8 rounded-full border-2 border-white"
           />

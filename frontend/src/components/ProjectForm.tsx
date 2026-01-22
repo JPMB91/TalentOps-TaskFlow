@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { useProjectStore } from '@/stores/projectStore';
+import React, { useState } from "react";
+import { X } from "lucide-react";
+import { useProjectStore } from "@/stores/projectStore";
 
 interface ProjectFormProps {
   onClose: () => void;
@@ -17,12 +17,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   projectId,
 }) => {
   const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
+    name: initialData?.name || "",
+    description: initialData?.description || "",
     memberEmails: [] as string[],
   });
 
-  const [currentEmail, setCurrentEmail] = useState('');
+  const [currentEmail, setCurrentEmail] = useState("");
   const { createProject, updateProject, isLoading, error } = useProjectStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,18 +42,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
 
   const addMember = () => {
     if (currentEmail && !formData.memberEmails.includes(currentEmail)) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         memberEmails: [...prev.memberEmails, currentEmail],
       }));
-      setCurrentEmail('');
+      setCurrentEmail("");
     }
   };
 
   const removeMember = (email: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      memberEmails: prev.memberEmails.filter(e => e !== email),
+      memberEmails: prev.memberEmails.filter((e) => e !== email),
     }));
   };
 
@@ -62,7 +62,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
       <div className="bg-white rounded-lg max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold">
-            {projectId ? 'Edit Project' : 'Create New Project'}
+            {projectId ? "Edit Project" : "Create New Project"}
           </h2>
           <button
             onClick={onClose}
@@ -80,9 +80,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             <input
               type="text"
               required
+              data-cy="project-name"
               value={formData.name}
               onChange={(e) =>
-                setFormData(prev => ({ ...prev, name: e.target.value }))
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter project name"
@@ -94,9 +95,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
               Description
             </label>
             <textarea
+              data-cy="project-description"
               value={formData.description}
               onChange={(e) =>
-                setFormData(prev => ({ ...prev, description: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -111,14 +116,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             <div className="flex space-x-2 mb-2">
               <input
                 type="email"
+                data-cy="member-email"
                 value={currentEmail}
                 onChange={(e) => setCurrentEmail(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMember())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addMember())
+                }
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter email address"
               />
               <button
                 type="button"
+                data-cy="add-member"
                 onClick={addMember}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
               >
@@ -145,9 +154,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             </div>
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm">{error}</div>
-          )}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
 
           <div className="flex space-x-3 pt-4">
             <button
@@ -159,10 +166,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
             </button>
             <button
               type="submit"
+              data-cy={projectId ? "save-changes" : "create-project"}
               disabled={isLoading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Saving...' : projectId ? 'Update' : 'Create'}
+              {isLoading ? "Saving..." : projectId ? "Update" : "Create"}
             </button>
           </div>
         </form>

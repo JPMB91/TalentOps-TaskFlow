@@ -44,3 +44,6 @@ next-env.d.ts
 # IDEs
 .vscode/
 .idea/
+
+cypress/screenshots
+cypress/videos

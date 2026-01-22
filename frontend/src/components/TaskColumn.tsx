@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { type Task } from '@/stores/taskStore';
+import React, { useState } from "react";
+import { type Task } from "@/stores/taskStore";
 
 interface TaskColumnProps {
   id: string;
@@ -32,15 +32,15 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    
-    const taskId = e.dataTransfer.getData('taskId');
+
+    const taskId = e.dataTransfer.getData("taskId");
     if (taskId) {
       onDrop(taskId, id);
     }
   };
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
-    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.setData("taskId", taskId);
   };
 
   return (
@@ -51,21 +51,25 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
         </h3>
 
         <div
+          data-cy="task-board"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`space-y-3 min-h-[200px] ${
-            dragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+            dragOver ? "bg-blue-50 border-2 border-blue-300 border-dashed" : ""
           }`}
         >
           {tasks.map((task) => (
             <div
               key={task.id}
+              data-cy="task-card"
               draggable
               onDragStart={(e) => handleDragStart(e, task.id)}
               className="bg-white p-4 rounded-lg shadow cursor-move hover:shadow-md transition-shadow"
             >
-              <h4 className="font-medium text-gray-900">{task.title}</h4>
+              <h4 className="font-medium text-gray-900" data-cy="task-title">
+                {task.title}
+              </h4>
               {task.description && (
                 <p className="text-sm text-gray-600 mt-2">{task.description}</p>
               )}
