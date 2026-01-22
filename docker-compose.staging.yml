@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://api:4000
+    depends_on:
+      - api
+    networks:
+      - staging-network
+
+  # Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:pass@db:5432/taskflow_staging
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - db
+    volumes:
+      - ./backend/logs:/app/logs
+    networks:
+      - staging-network
+
+  # Base de datos
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_DB=taskflow_staging
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    volumes:
+      - staging_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - staging-network
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - staging_redis_data:/data
+    networks:
+      - staging-network
+
+volumes:
+  staging_db_data:
+  staging_redis_data:
+
+networks:
+  staging-network:
+    driver: bridge

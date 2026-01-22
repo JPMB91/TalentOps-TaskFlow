@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { config } from './config/environment';
+import { config } from './config/environment.js'; // Usa .js para compatibilidad ESM y ejecuta con tsx
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 
@@ -18,7 +18,7 @@ app.use(helmet());
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  // credentials: true
 }));
 
 // Rate limiting
