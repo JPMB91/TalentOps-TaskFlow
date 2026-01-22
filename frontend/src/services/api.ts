@@ -1,5 +1,6 @@
 import { Task } from '@/stores/taskStore';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { password } from 'bun';
 
 class ApiService {
   private api: AxiosInstance;
@@ -26,15 +27,21 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Token expirado, redirigir a login
+        const status = error.response?.status;
+        const url = error.config?.url;
+
+        const isAuthLogin = url?.includes('/auth/login');
+
+        if (status === 401 && !isAuthLogin) {
+          // Solo para requests autenticados
           localStorage.removeItem('auth-token');
           window.location.href = '/login';
         }
+
         return Promise.reject(error);
       }
-    );
-  }
+    )
+  };
 
   // Auth endpoints
   async login(credentials: { email: string; password: string }) {
@@ -44,6 +51,7 @@ class ApiService {
 
   async register(userData: { name: string; email: string; password: string }) {
     const response = await this.api.post('/auth/register', userData);
+    console.log("userdata", userData);
     return response.data;
   }
 
@@ -90,7 +98,10 @@ class ApiService {
     assigneeId?: string;
     dueDate?: string;
   }) {
-    const response = await this.api.post(`/projects/${projectId}/tasks`, taskData);
+    const response = await this.api.post('/tasks', {
+      ...taskData,
+      projectId
+    });
     return response.data;
   }
 
