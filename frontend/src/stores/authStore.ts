@@ -1,12 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import { apiService } from '@/services/api'; 
 
-interface User {
+
+export interface User {
   id: string;
   email: string;
   name: string;
   avatar?: string;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
 }
 
 interface AuthState {
@@ -22,31 +30,25 @@ interface AuthState {
   clearError: () => void;
 }
 
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-}
-
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      login: async (email: string, password: string) => {
+      login: async (email, password) => {
         set({ isLoading: true, error: null });
 
         try {
-          const response = await axios.post('/api/auth/login', {
-            email,
-            password,
-          });
+          // Use centralized apiService for the network request
+          const data = await apiService.login({ email, password });
+          const { user, token } = data;
 
-          const { user, token } = response.data;
+          // Synchronize token with localStorage for the ApiService interceptor
+          localStorage.setItem('auth-token', token);
 
           set({
             user,
@@ -54,61 +56,59 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-
-          // Set token in axios defaults
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error: unknown) {
           const message = axios.isAxiosError(error)
             ? error.response?.data?.message || 'Login failed'
-            : 'Login failed';
+            : 'An unexpected error occurred';
 
-          set({
-            error: message,
-            isLoading: false,
-          });
+          set({ error: message, isLoading: false });
           throw error;
         }
       },
 
-      register: async (data: RegisterData) => {
+      register: async (userData) => {
         set({ isLoading: true, error: null });
 
         try {
-          const response = await axios.post('/api/auth/register', data);
+          const data = await apiService.register(userData);
+          const { user, token } = data;
+
+          // Synchronize token for the interceptor
+          localStorage.setItem('auth-token', token);
 
           set({
-            user: response.data.user,
-            token: response.data.token,
+            user,
+            token,
             isAuthenticated: true,
             isLoading: false,
           });
         } catch (error: unknown) {
           const message = axios.isAxiosError(error)
             ? error.response?.data?.message || 'Registration failed'
-            : 'Registration failed';
+            : 'An unexpected error occurred';
 
-          set({
-            error: message,
-            isLoading: false,
-          });
+          set({ error: message, isLoading: false });
           throw error;
         }
       },
 
       logout: () => {
+        // Remove token so the ApiService interceptor stops sending it
+        localStorage.removeItem('auth-token');
+        
         set({
           user: null,
           token: null,
           isAuthenticated: false,
+          error: null,
         });
-
-        delete axios.defaults.headers.common['Authorization'];
       },
 
       clearError: () => set({ error: null }),
     }),
     {
       name: 'auth-storage',
+      // Only persist these keys to localStorage
       partialize: (state) => ({
         user: state.user,
         token: state.token,

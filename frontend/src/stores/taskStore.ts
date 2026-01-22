@@ -1,8 +1,31 @@
 import { create } from 'zustand';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import { apiService } from '@/services/api';
+
+interface TaskState {
+  tasks: Task[];
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  fetchTasks: (projectId: string) => Promise<void>;
+  createTask: (data: CreateTaskInput) => Promise<void>;
+  updateTask: (taskId: string, data: UpdateTaskInput) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>;
+  clearError: () => void;
+}
+
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export interface UserSummary {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string | null;
+}
 
 export interface Task {
   id: string;
@@ -13,22 +36,37 @@ export interface Task {
   projectId: string;
   assigneeId: string | null;
   reporterId: string;
-  dueDate: string | null;
+  dueDate: string | null; 
   createdAt: string;
   updatedAt: string;
+  // Relations from Prisma 'include'
+  assignee?: UserSummary | null;
+  reporter?: UserSummary;
 }
 
-interface TaskState {
-  tasks: Task[];
-  isLoading: boolean;
-  error: string | null;
+/**
+ * Data required to create a task. 
+ */
+export interface CreateTaskInput {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  projectId: string;
+  assigneeId?: string;
+  dueDate?: string; 
+}
 
-  fetchTasks: (projectId: string) => Promise<void>;
-  createTask: (data: Partial<Task>) => Promise<void>;
-  updateTask: (taskId: string, data: Partial<Task>) => Promise<void>;
-  deleteTask: (taskId: string) => Promise<void>;
-  moveTask: (taskId: string, newStatus: TaskStatus) => Promise<void>;
-  clearError: () => void;
+/**
+ * Data allowed for updates.
+ */
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assigneeId?: string;
+  dueDate?: string;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
@@ -38,74 +76,67 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   fetchTasks: async (projectId: string) => {
     set({ isLoading: true, error: null });
-
     try {
-      const response = await axios.get(`/api/projects/${projectId}/tasks`);
-      set({ tasks: response.data, isLoading: false });
+      const tasks = await apiService.getProjectTasks(projectId);
+      set({ tasks, isLoading: false });
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to fetch tasks'
-        : 'Failed to fetch tasks';
-
-      set({ error: message, isLoading: false });
+      set({ 
+        error: axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to fetch tasks', 
+        isLoading: false 
+      });
     }
   },
 
-  createTask: async (data: Partial<Task>) => {
+  createTask: async (data: CreateTaskInput) => {
     set({ isLoading: true, error: null });
-
     try {
-      const response = await axios.post('/api/tasks', data);
+
+      const newTask = await apiService.createTask(data.projectId, data);
+      
       set((state) => ({
-        tasks: [...state.tasks, response.data],
+        // backend returns 'desc' order, so we prepend the new task
+        tasks: [newTask, ...state.tasks],
         isLoading: false,
       }));
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to create task'
-        : 'Failed to create task';
-
-      set({ error: message, isLoading: false });
+      set({ 
+        error: axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to create task', 
+        isLoading: false 
+      });
       throw error;
     }
   },
 
-  updateTask: async (taskId: string, data: Partial<Task>) => {
+  updateTask: async (taskId: string, data: UpdateTaskInput) => {
     set({ isLoading: true, error: null });
-
     try {
-      const response = await axios.put(`/api/tasks/${taskId}`, data);
+      const updatedTask = await apiService.updateTask(taskId, data);
       set((state) => ({
-        tasks: state.tasks.map((task) =>
-          task.id === taskId ? response.data : task
-        ),
+        tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
         isLoading: false,
       }));
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to update task'
-        : 'Failed to update task';
-
-      set({ error: message, isLoading: false });
+      set({ 
+        error: axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to update task', 
+        isLoading: false 
+      });
       throw error;
     }
   },
 
   deleteTask: async (taskId: string) => {
     set({ isLoading: true, error: null });
-
     try {
-      await axios.delete(`/api/tasks/${taskId}`);
+      await apiService.deleteTask(taskId);
       set((state) => ({
-        tasks: state.tasks.filter((task) => task.id !== taskId),
+        tasks: state.tasks.filter((t) => t.id !== taskId),
         isLoading: false,
       }));
     } catch (error: unknown) {
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to delete task'
-        : 'Failed to delete task';
-
-      set({ error: message, isLoading: false });
+      set({ 
+        error: axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to delete task', 
+        isLoading: false 
+      });
       throw error;
     }
   },
@@ -113,25 +144,22 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   moveTask: async (taskId: string, newStatus: TaskStatus) => {
     const previousTasks = get().tasks;
 
-    // Optimistic update
+    // Optimistic UI Update: change state before the API call finishes
     set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
+      tasks: state.tasks.map((t) =>
+        t.id === taskId ? { ...t, status: newStatus } : t
       ),
     }));
 
     try {
-      await axios.patch(`/api/tasks/${taskId}/status`, { status: newStatus });
+      // Specifically triggers the status update endpoint
+      await apiService.updateTaskStatus(taskId, newStatus);
     } catch (error: unknown) {
-      // Revert on error
+      // Rollback to previous state if the network request fails
       set({ tasks: previousTasks });
-
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || 'Failed to move task'
-        : 'Failed to move task';
-
-      set({ error: message });
-      throw error;
+      set({ 
+        error: axios.isAxiosError(error) ? error.response?.data?.message : 'Failed to move task' 
+      });
     }
   },
 
