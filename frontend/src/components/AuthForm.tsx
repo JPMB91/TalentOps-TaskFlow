@@ -73,15 +73,22 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
           name="name"
           value={formData.name}
           onChange={handleChange}
+          placeholder="Full Name"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           data-cy="name-input"
+          required
         />
       )}
 
       <input
         name="email"
+        type="email"
         value={formData.email}
         onChange={handleChange}
+        placeholder="Email Address"
+        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         data-cy="email-input"
+        required
       />
 
       <input
@@ -89,7 +96,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
         type="password"
         value={formData.password}
         onChange={handleChange}
+        placeholder="Password"
+        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         data-cy="password-input"
+        required
       />
 
       {mode === 'register' && (
@@ -98,7 +108,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
           type="password"
           value={formData.confirmPassword}
           onChange={handleChange}
+          placeholder="Confirm Password"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           data-cy="confirm-password-input"
+          required
         />
       )}
 
@@ -111,6 +124,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
       <button
         type="submit"
         disabled={isLoading}
+        className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         data-cy={mode === 'login' ? 'login-submit' : 'register-submit'}
       >
         {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Sign Up'}

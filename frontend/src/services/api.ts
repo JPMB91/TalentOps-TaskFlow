@@ -13,6 +13,7 @@ class ApiService {
     // Request interceptor para agregar token
     this.api.interceptors.request.use(
       (config) => {
+        // Obtener el token de localStorage (donde authStore lo guarda)
         const token = localStorage.getItem('auth-token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -86,7 +87,7 @@ class ApiService {
 
   // Task endpoints
   async getProjectTasks(projectId: string) {
-    const response = await this.api.get(`/projects/${projectId}/tasks`);
+    const response = await this.api.get(`/tasks/projects/${projectId}/tasks`);
     return response.data;
   }
 
@@ -97,7 +98,7 @@ class ApiService {
     assigneeId?: string;
     dueDate?: string;
   }) {
-    const response = await this.api.post('/api/tasks', {
+    const response = await this.api.post('/tasks', {
       ...taskData,
       projectId
     });
@@ -105,23 +106,28 @@ class ApiService {
   }
 
   async updateTaskStatus(taskId: string, status: string) {
-    const response = await this.api.put(`/api/tasks/${taskId}`, { status });
+    const response = await this.api.put(`/tasks/${taskId}`, { status });
     return response.data;
   }
 
   async updateTask(taskId: string, updates: Partial<Task>) {
-    const response = await this.api.put(`/api/tasks/${taskId}`, updates);
+    const response = await this.api.put(`/tasks/${taskId}`, updates);
     return response.data;
   }
 
   async deleteTask(taskId: string) {
-    const response = await this.api.delete(`/api/tasks/${taskId}`);
+    const response = await this.api.delete(`/tasks/${taskId}`);
     return response.data;
   }
 
   // Dashboard
   async getDashboardStats() {
     const response = await this.api.get('/dashboard/stats');
+    return response.data;
+  }
+
+  async getRecentActivity(limit: number = 10) {
+    const response = await this.api.get(`/dashboard/activity?limit=${limit}`);
     return response.data;
   }
 }
