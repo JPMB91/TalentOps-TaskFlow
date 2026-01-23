@@ -23,7 +23,7 @@ export class ProjectService {
         description,
         ownerId,
         members: {
-          create: members.map(user => ({
+          create: members.map((user: { id: string; email: string }) => ({
             userId: user.id,
             role: 'MEMBER' as const
           }))
