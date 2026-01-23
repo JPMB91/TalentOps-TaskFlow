@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { DashboardStats } from "@/components/DashboardStats";
 import { RecentActivity } from "@/components/RecentActivity";
+import { UserProjects } from "@/components/UserProjects";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function Dashboard() {
       </div>
 
       <DashboardStats />
+      <UserProjects />
       <RecentActivity />
     </div>
   );

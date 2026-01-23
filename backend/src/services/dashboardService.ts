@@ -118,6 +118,7 @@ export class DashboardService {
     // Formatear actividad
     const activity = [
       ...recentTasks.map(task => ({
+        id: `task-${task.id}`,
         type: 'task_created' as const,
         title: `Nueva tarea en ${task.project.name}`,
         description: `"${task.title}" ${task.assignee ? 'asignada a ' + task.assignee.name : 'sin asignar'}`,
@@ -126,6 +127,7 @@ export class DashboardService {
         taskId: task.id
       })),
       ...recentProjects.map(project => ({
+        id: `project-${project.id}`,
         type: 'project_created' as const,
         title: 'Nuevo proyecto',
         description: `"${project.name}" creado por ${project.owner.name}`,
