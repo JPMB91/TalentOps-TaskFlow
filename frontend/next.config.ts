@@ -11,6 +11,7 @@ const nextConfig: import('next').NextConfig = {
   env: {
     API_URL: process.env.API_URL || 'http://localhost:4000',
   },
+  output: 'standalone',
 };
 
 module.exports = nextConfig;
