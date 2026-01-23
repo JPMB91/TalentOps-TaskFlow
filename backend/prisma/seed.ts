@@ -5,10 +5,10 @@ const prisma = new PrismaClient()
 async function main() {
   // Primero crear usuarios si no existen
   const user1 = await prisma.user.upsert({
-    where: { email: 'admin2@example.com' },
+    where: { email: 'admin@example.com' },
     update: {},
     create: {
-      email: 'admin3@example.com',
+      email: 'admin@example.com',
       name: 'Juan Pérez',
       password: '$2b$12$HAEXkh2CPkYljUJXkcILv.oytZPEWdX/odj20sBgjmW3fM6ZiXTye', 
     },
