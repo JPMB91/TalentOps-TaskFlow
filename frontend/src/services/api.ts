@@ -1,6 +1,5 @@
 import { Task } from '@/stores/taskStore';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { password } from 'bun';
 
 class ApiService {
   private api: AxiosInstance;
@@ -98,7 +97,7 @@ class ApiService {
     assigneeId?: string;
     dueDate?: string;
   }) {
-    const response = await this.api.post('/tasks', {
+    const response = await this.api.post('/api/tasks', {
       ...taskData,
       projectId
     });
@@ -106,17 +105,17 @@ class ApiService {
   }
 
   async updateTaskStatus(taskId: string, status: string) {
-    const response = await this.api.put(`/tasks/${taskId}`, { status });
+    const response = await this.api.put(`/api/tasks/${taskId}`, { status });
     return response.data;
   }
 
   async updateTask(taskId: string, updates: Partial<Task>) {
-    const response = await this.api.put(`/tasks/${taskId}`, updates);
+    const response = await this.api.put(`/api/tasks/${taskId}`, updates);
     return response.data;
   }
 
   async deleteTask(taskId: string) {
-    const response = await this.api.delete(`/tasks/${taskId}`);
+    const response = await this.api.delete(`/api/tasks/${taskId}`);
     return response.data;
   }
 
