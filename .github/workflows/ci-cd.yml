@@ -52,8 +52,6 @@ jobs:
 - name: Security audit frontend
   run: cd frontend && npm audit --audit-level high
 
-
-
   # 🧪 Testing
   test:
     name: Testing
