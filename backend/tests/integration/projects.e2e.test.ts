@@ -1,30 +1,48 @@
-import request from 'supertest';
+import supertest from 'supertest';
+const request = supertest;
 import { prisma } from '../../src/config/database';
 import app from '../../src/index';
+import * as jwt from 'jsonwebtoken';
+import * as bcrypt from 'bcryptjs';
+import { config } from '../../src/config/environment';
 
 describe('Projects API Integration', () => {
   let authToken: string;
   let userId: string;
 
   beforeAll(async () => {
-    // Crear usuario de prueba
-    const user = await prisma.user.create({
-      data: {
-        name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedpassword',
-      },
-    });
-    userId = user.id;
-
-    // Generar token (simular login)
-    const jwt = require('jsonwebtoken');
-    authToken = jwt.sign(
-      { userId },
-      process.env.JWT_SECRET || 'test-secret',
-      { expiresIn: '1h' }
-    );
+  // Usar un email único para esta suite de tests
+  const hashedPassword = await bcrypt.hash('Password123@', 12);
+  const user = await prisma.user.create({
+    data: {
+      name: 'Project Test User',
+      email: 'project-test@example.com',  // Email único
+      password: hashedPassword,
+    },
   });
+  userId = user.id;
+
+  authToken = jwt.sign(
+    { userId },
+    config.jwtSecret,
+    { expiresIn: '1h' }
+  );
+});
+
+beforeEach(async () => {
+  await prisma.projectMember.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.project.deleteMany();
+  
+  // Verificar que el usuario específico de ESTA suite existe
+  const userExists = await prisma.user.findUnique({
+    where: { email: 'project-test@example.com' }
+  });
+  
+  if (!userExists) {
+    throw new Error('Project test user was deleted!');
+  }
+});
 
   afterAll(async () => {
     // Limpiar base de datos
@@ -54,12 +72,13 @@ describe('Projects API Integration', () => {
     });
 
     test('should add members to project', async () => {
-      // Crear usuario adicional
+// Crear usuario adicional con contraseña hasheada
+      const memberPassword = await bcrypt.hash('password123', 12);
       const member = await prisma.user.create({
         data: {
           name: 'Member User',
           email: 'member@example.com',
-          password: 'hashedpassword',
+          password: memberPassword,
         },
       });
 
@@ -80,16 +99,18 @@ describe('Projects API Integration', () => {
     });
   });
 
-  describe('GET /api/projects', () => {
+describe('GET /api/projects', () => {
     test('should return user projects', async () => {
-      // Crear proyecto de prueba
-      await prisma.project.create({
-        data: {
+      // First create a project via API to ensure proper setup
+      await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
           name: 'User Project',
           description: 'Belongs to user',
-          ownerId: userId,
-        },
-      });
+          memberEmails: [],
+        })
+        .expect(201);
 
       const response = await request(app)
         .get('/api/projects')
@@ -102,15 +123,18 @@ describe('Projects API Integration', () => {
     });
   });
 
-  describe('PUT /api/projects/:id', () => {
+describe('PUT /api/projects/:id', () => {
     test('should update project', async () => {
-      const project = await prisma.project.create({
-        data: {
+      // First create a project via API
+      const createResponse = await request(app)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
           name: 'Original Name',
           description: 'Original description',
-          ownerId: userId,
-        },
-      });
+          memberEmails: [],
+        })
+        .expect(201);
 
       const updates = {
         name: 'Updated Name',
@@ -118,7 +142,7 @@ describe('Projects API Integration', () => {
       };
 
       const response = await request(app)
-        .put(`/api/projects/${project.id}`)
+        .put(`/api/projects/${createResponse.body.id}`)
         .set('Authorization', `Bearer ${authToken}`)
         .send(updates)
         .expect(200);
@@ -127,33 +151,41 @@ describe('Projects API Integration', () => {
       expect(response.body.description).toBe(updates.description);
     });
 
-    test('should return 403 for non-owner update', async () => {
-      // Crear otro usuario
+test('should return 404 for non-owner update', async () => {
+      // Crear otro usuario con contraseña hasheada
+      const otherUserPassword = await bcrypt.hash('Password123@', 12);
       const otherUser = await prisma.user.create({
         data: {
           name: 'Other User',
           email: 'other@example.com',
-          password: 'hashedpassword',
+          password: otherUserPassword,
         },
       });
 
-      const project = await prisma.project.create({
-        data: {
-          name: 'Other User Project',
-          ownerId: otherUser.id,
-        },
-      });
-
+      // Create project as other user
       const otherToken = jwt.sign(
         { userId: otherUser.id },
-        process.env.JWT_SECRET || 'test-secret'
+        config.jwtSecret 
       );
 
-      await request(app)
-        .put(`/api/projects/${project.id}`)
+      const createResponse = await request(app)
+        .post('/api/projects')
         .set('Authorization', `Bearer ${otherToken}`)
-        .send({ name: 'Hacked Name' })
-        .expect(403);
+        .send({
+          name: 'Other User Project',
+          description: 'Should not be updatable by others',
+          memberEmails: [],
+        })
+        .expect(201);
+
+      // Try to update other user's project with original user's token
+      const response = await request(app)
+        .put(`/api/projects/${createResponse.body.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Hacked Name' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('Project not found or not authorized');
     });
   });
 });

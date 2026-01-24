@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { config } from './config/environment.js'; // Usa .js para compatibilidad ESM y ejecuta con tsx
+import { config } from './config/environment';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
 
