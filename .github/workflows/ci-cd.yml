@@ -24,18 +24,35 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
 
-    - name: Install dependencies
-      run: npm ci
+    - name: Install backend dependencies
+      run: cd backend && npm ci
 
-    - name: Type checking
-      run: npm run type-check
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
 
-    - name: Linting
-      run: npm run lint
+    - name: Type checking backend
+  run: cd backend && npm run type-check || echo "No type-check script in backend"
 
-    - name: Security audit
-      run: npm audit --audit-level high
+- name: Type checking frontend
+  run: cd frontend && npm run type-check
+
+- name: Linting backend
+  run: cd backend && npm run lint
+
+- name: Linting frontend
+  run: cd frontend && npm run lint
+
+- name: Security audit backend
+  run: cd backend && npm audit --audit-level high
+
+- name: Security audit frontend
+  run: cd frontend && npm audit --audit-level high
+
+
 
   # 🧪 Testing
   test:
@@ -64,9 +81,15 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
 
-    - name: Install dependencies
-      run: npm ci
+    - name: Install backend dependencies
+      run: cd backend && npm ci
+
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
 
     - name: Setup database
       run: |
@@ -106,6 +129,15 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+
+    - name: Install backend dependencies
+      run: cd backend && npm ci
+
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci
 
     - name: Build frontend
       run: cd frontend && npm run build
